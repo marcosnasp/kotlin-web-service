@@ -1,18 +1,12 @@
 package com.example.kotlinwebservice
 
+import jakarta.persistence.*
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.jdbc.core.SqlParameterValue
+import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Service
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestHeader
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
+import org.springframework.web.bind.annotation.*
+import java.util.*
 
 /**
  *  In Kotlin, if a class doesn't include any members (properties or functions), you can omit the class body ({}) for good.
@@ -62,7 +56,9 @@ class MessageController(val service: MessageService) {
 * and some standard functionality and some utility functions
 * are often mechanically derivable from the class structure.
 * */
-data class Message(val id: String?, val text: String)
+@Entity
+@Table(name = "messages")
+data class Message(@Id @GeneratedValue(strategy = GenerationType.UUID) val id: String?, val text: String)
 
 // https://kotlinlang.org/docs/jvm-spring-boot-add-db-support.html#add-database-support
 /**
@@ -72,34 +68,16 @@ data class Message(val id: String?, val text: String)
  * In our case, the constructor is (val db: JdbcTemplate).
  */
 @Service
-class MessageService(val db: JdbcTemplate) {
-    fun findMessages(): List<Message> = db.query("select * from messages") { response, _ ->
-        Message(
-            response.getString("id"),
-            response.getString("text")
-        )
-    }
+class MessageService(val db: MessageRepository) {
+    fun findMessages(): List<Message> = db.findAll().toList()
 
     fun save(message: Message) {
-        /**
-         * The code message.id ?: UUID.randomUUID().toString()
-         * uses the Elvis operator (if-not-null-else shorthand) ?:.
-         * If the expression to the left of ?: is not null,
-         * the Elvis operator returns it; otherwise, it returns the expression to the right.
-         * Note that the expression on the right-hand side is evaluated only if the left-hand side is null.
-         * */
-        val id = message.id ?: UUID.randomUUID().toString()
-        db.update("insert into messages values(?, ?)", id, message.text)
+
+        db.save(message)
     }
 
-    fun findByMessageId(id: String): Message? {
-       val sql: String =  "select * from messages where id = ?"
-       return db.queryForObject(sql, arrayOf(id)) { rs, _ ->
-            Message(
-                rs.getString("id"),
-                rs.getString("text")
-            )
-        }
-    }
+    fun findByMessageId(id: String): Message = db.findById(id).get()
 
 }
+
+interface MessageRepository: CrudRepository<Message, String>
