@@ -20,12 +20,12 @@ import java.util.*
 * */
 @SpringBootApplication
 @EnableJpaRepositories
-//@ComponentScan(basePackages = ["com.example.java"])
-class KotlinWebServiceApplication
+class KotlinWebServiceApplication 
 
 fun main(args: Array<String>) {
     runApplication<KotlinWebServiceApplication>(*args)
 }
+
 
 @RestController
 class MessageController(val service: MessageService) {
